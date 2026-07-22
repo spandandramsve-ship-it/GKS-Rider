@@ -1,0 +1,118 @@
+BUG FIXES - DELIVERY CODE & ORDER HISTORY
+==========================================
+
+1. INVALID DELIVERY CODE REDIRECTED TO SIGN IN
+-----------------------------------------------
+
+Symptom:
+  Entering an incorrect delivery code on the Delivery screen kicked the
+  rider out to the Sign In screen instead of showing an "Invalid delivery
+  code" error inline.
+
+File:
+  lib/core/api_client.dart
+
+Root cause:
+  ApiClient._onError forces a global logout on any 401 response, with a
+  single exemption for the login OTP endpoint ("verify-otp"), on the
+  assumption that a 401 always means "session expired." However,
+  POST /rider/orders/:id/complete (delivery-code verification) also
+  responds 401 when the code is wrong -- that's a business-logic failure
+  on the current screen, not an expired session. Since "/complete" wasn't
+  in the exemption list, every wrong-code attempt cleared the session and
+  fired onUnauthorized, bouncing the rider to Sign In.
+
+Fix:
+  Extended the exemption check to also match paths ending in "/complete":
+
+    final path = err.requestOptions.path;
+    final isCodeVerification =
+        path.contains('verify-otp') || path.endsWith('/complete');
+    if (!isCodeVerification) {
+      // ...force logout...
+    }
+
+  Now a wrong delivery code just rejects the request as an ApiException,
+  which ActiveOrderState.completeDelivery already surfaces via `error`,
+  and delivery_screen.dart already displays via showErrorSnackBar. No UI
+  changes were needed -- it was already wired correctly, it just never
+  got the chance to run because the session was cleared first.
+
+
+2. COMPLETED TAB ALWAYS SHOWS "NO ORDERS YET"
+-----------------------------------------------
+
+Symptom:
+  Even with completed deliveries on record, the "Completed" tab in Order
+  History showed the empty state.
+
+File:
+  lib/screens/history/history_screen.dart
+
+Root cause:
+  _fetchPage() guarded re-entrancy with a single _isLoading boolean:
+
+    Future<void> _fetchPage() async {
+      if (_isLoading) return;
+      ...
+    }
+
+  initState() kicks off a fetch for the default "All" tab as soon as the
+  screen mounts. If the rider taps another tab (e.g. "Completed") before
+  that first request resolves, _switchTab() reset _items/_nextCursor and
+  called _fetchPage() again -- but the guard silently dropped it because
+  _isLoading was still true from the in-flight "All" request. When that
+  stale request finally resolved, its setState callback ran
+  unconditionally, setting _isLoading = false and populating _items with
+  All-tab results while the "Completed" chip was selected -- or, worse,
+  leaving the list empty with no further fetch ever triggered, since
+  nothing else calls _fetchPage() again. The tab is then stuck showing
+  "No orders yet" regardless of how much history exists, because from the
+  widget's perspective loading finished and the list is empty.
+
+Fix:
+  Added a monotonically increasing _fetchToken to invalidate in-flight
+  requests on tab switch, and stopped _isLoading from blocking a
+  deliberate tab switch:
+
+    int _fetchToken = 0;
+
+    Future<void> _fetchPage() async {
+      if (_isLoading) return;
+      final token = ++_fetchToken;
+      setState(() => _isLoading = true);
+      try {
+        final res = await _dashService.getHistory(...);
+        if (!mounted || token != _fetchToken) return; // stale -- ignore
+        setState(() { ...apply results... });
+      } catch (e) {
+        if (!mounted || token != _fetchToken) return;
+        setState(() { ...apply error... });
+      }
+    }
+
+    void _switchTab(int index) {
+      _fetchToken++;               // invalidate any in-flight request
+      setState(() {
+        _selectedTab = index;
+        _items.clear();
+        _nextCursor = null;
+        _hasMore = true;
+        _isLoading = false;        // unblock the guard for the fresh fetch
+      });
+      _fetchPage();
+    }
+
+  Each fetch now captures the token that was current when it started. A
+  response is only applied if that token still matches _fetchToken when
+  the request completes -- otherwise the tab has since changed and the
+  result is discarded. Switching tabs also resets _isLoading, so the new
+  tab's fetch is never blocked by a stale request from the previous tab.
+
+
+VERIFICATION
+------------
+  - `flutter analyze lib/core/api_client.dart
+     lib/screens/history/history_screen.dart` -- no issues.
+  - Both fixes are scoped to the two files above; no API contracts,
+    models, or other screens were changed.

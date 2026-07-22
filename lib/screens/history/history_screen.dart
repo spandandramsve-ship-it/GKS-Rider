@@ -40,6 +40,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ];
   int _selectedTab = 0;
   bool _showPayments = false;
+  int _fetchToken = 0;
 
   @override
   void initState() {
@@ -65,6 +66,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _fetchPage() async {
     if (_isLoading) return;
+    final token = ++_fetchToken;
     setState(() => _isLoading = true);
 
     try {
@@ -73,6 +75,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
         status: status,
         cursor: _nextCursor,
       );
+      // Drop stale responses from a tab that's no longer selected.
+      if (!mounted || token != _fetchToken) return;
       setState(() {
         _items.addAll(res.orders);
         _nextCursor = res.pagination.nextCursor;
@@ -81,6 +85,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         _error = null;
       });
     } catch (e) {
+      if (!mounted || token != _fetchToken) return;
       setState(() {
         _error = extractApiException(e).message;
         _isLoading = false;
@@ -89,12 +94,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _switchTab(int index) {
+    // Invalidate any in-flight request for the previous tab so its
+    // response can't land on top of this tab's (possibly empty) list.
+    _fetchToken++;
     setState(() {
       _selectedTab = index;
       _showPayments = false;
       _items.clear();
       _nextCursor = null;
       _hasMore = true;
+      _isLoading = false;
     });
     _fetchPage();
   }

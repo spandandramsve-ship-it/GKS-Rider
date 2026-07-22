@@ -108,9 +108,13 @@ class ApiClient {
 
     // Global 401 handling — force logout.
     if (statusCode == 401) {
-      // Don't trigger global logout for verify-otp 401 (wrong code).
-      final isVerifyOtp = err.requestOptions.path.contains('verify-otp');
-      if (!isVerifyOtp) {
+      // Don't trigger global logout for wrong-code responses: login OTP
+      // verification or delivery-code completion. Those are business-logic
+      // failures on the current screen, not an expired/invalid session.
+      final path = err.requestOptions.path;
+      final isCodeVerification =
+          path.contains('verify-otp') || path.endsWith('/complete');
+      if (!isCodeVerification) {
         debugPrint('[ApiClient] 401 received — triggering global logout');
         await Session.instance.clear();
         onUnauthorized?.call();
