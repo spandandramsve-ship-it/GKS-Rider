@@ -49,6 +49,7 @@ class ApiClient {
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
     }
+    debugPrint('[API] 🚀 ${options.method} ${options.uri}');
     handler.next(options);
   }
 
@@ -59,23 +60,41 @@ class ApiClient {
     ResponseInterceptorHandler handler,
   ) {
     final body = response.data;
-    if (body is Map<String, dynamic>) {
-      if (body['success'] == true) {
-        // Replace the full envelope with just the `data` payload.
-        response.data = body['data'];
-        handler.next(response);
+    if (body is Map) {
+      final map = Map<String, dynamic>.from(body);
+      if (map.containsKey('success')) {
+        if (map['success'] == true) {
+          debugPrint('[API] ✅ ${response.requestOptions.method} ${response.requestOptions.uri} (${response.statusCode})');
+          // Replace the full envelope with just the `data` payload if provided,
+          // otherwise keep the full map (e.g. for endpoints returning messages).
+          if (map.containsKey('data') && map['data'] != null) {
+            response.data = map['data'];
+          } else {
+            response.data = map;
+          }
+          handler.next(response);
+        } else {
+          // Backend explicitly returned success: false.
+          final msg = map['message'] as String? ??
+              map['error'] as String? ??
+              'Something went wrong';
+          debugPrint('[API] ❌ ${response.requestOptions.method} ${response.requestOptions.uri} (${response.statusCode}): $msg');
+          handler.reject(
+            DioException(
+              requestOptions: response.requestOptions,
+              response: response,
+              error: ApiException(msg, statusCode: response.statusCode),
+            ),
+          );
+        }
       } else {
-        // Backend explicitly returned success: false.
-        final msg = body['message'] as String? ?? 'Something went wrong';
-        handler.reject(
-          DioException(
-            requestOptions: response.requestOptions,
-            response: response,
-            error: ApiException(msg, statusCode: response.statusCode),
-          ),
-        );
+        // No 'success' wrapper present — standard REST payload, pass through.
+        debugPrint('[API] ✅ ${response.requestOptions.method} ${response.requestOptions.uri} (${response.statusCode})');
+        response.data = map;
+        handler.next(response);
       }
     } else {
+      debugPrint('[API] ✅ ${response.requestOptions.method} ${response.requestOptions.uri} (${response.statusCode})');
       handler.next(response);
     }
   }
@@ -97,14 +116,27 @@ class ApiClient {
 
     // Try to extract the backend message from the response body.
     final data = err.response?.data;
-    if (data is Map<String, dynamic> && data.containsKey('message')) {
-      message = data['message'] as String;
-    } else if (err.type == DioExceptionType.connectionTimeout ||
-        err.type == DioExceptionType.receiveTimeout) {
-      message = 'Connection timed out. Please try again.';
-    } else if (err.type == DioExceptionType.connectionError) {
-      message = 'Unable to reach the server. Check your connection.';
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      if (map['message'] is String && (map['message'] as String).isNotEmpty) {
+        message = map['message'] as String;
+      } else if (map['error'] is String && (map['error'] as String).isNotEmpty) {
+        message = map['error'] as String;
+      }
     }
+
+    if (message == 'Something went wrong') {
+      if (err.type == DioExceptionType.connectionTimeout ||
+          err.type == DioExceptionType.receiveTimeout) {
+        message = 'Connection timed out. Please try again.';
+      } else if (err.type == DioExceptionType.connectionError) {
+        message = 'Unable to reach server at ${err.requestOptions.uri}. Check network or backend server.';
+      } else if (err.message != null && err.message!.isNotEmpty) {
+        message = err.message!;
+      }
+    }
+
+    debugPrint('[API] ❌ ${err.requestOptions.method} ${err.requestOptions.uri} [Status ${statusCode ?? "N/A"}]: $message');
 
     // Global 401 handling — force logout.
     if (statusCode == 401) {
@@ -135,12 +167,19 @@ class ApiClient {
 
 ApiException extractApiException(dynamic error) {
   if (error is ApiException) return error;
-  if (error is DioException && error.error is ApiException) {
-    return error.error as ApiException;
-  }
   if (error is DioException) {
+    if (error.error is ApiException) {
+      return error.error as ApiException;
+    }
+    final data = error.response?.data;
+    String? msg;
+    if (data is Map) {
+      final map = Map<String, dynamic>.from(data);
+      msg = map['message'] as String? ?? map['error'] as String?;
+    }
+    msg ??= error.message;
     return ApiException(
-      error.message ?? 'Something went wrong',
+      msg ?? 'Something went wrong',
       statusCode: error.response?.statusCode,
     );
   }

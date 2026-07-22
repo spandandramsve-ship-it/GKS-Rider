@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
+
 /// Environment configuration for GKS Rider.
 ///
 /// Selects base URL and socket URL based on `--dart-define=ENV=<env>`.
-/// Defaults to `dev` (Android emulator pointing at host machine).
+/// Defaults to `dev` (Android emulator pointing at host machine, or localhost on iOS/web/desktop).
 class Env {
   Env._();
 
@@ -9,6 +11,15 @@ class Env {
 
   static bool get isDev => _env == 'dev' || _env == 'ios' || _env == 'local';
   static bool get isProd => _env == 'prod';
+
+  static String get _defaultHost {
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return 'localhost';
+    }
+    return '10.0.2.2';
+  }
 
   /// REST API base URL (includes /api/v1).
   static String get baseUrl {
@@ -22,7 +33,7 @@ class Env {
         return 'http://187.127.171.117/api/v1';
       case 'dev':
       default:
-        return 'http://10.0.2.2:5000/api/v1';
+        return 'http://$_defaultHost:5000/api/v1';
     }
   }
 
@@ -37,7 +48,7 @@ class Env {
         return 'http://187.127.171.117';
       case 'dev':
       default:
-        return 'http://10.0.2.2:5000';
+        return 'http://$_defaultHost:5000';
     }
   }
 }
