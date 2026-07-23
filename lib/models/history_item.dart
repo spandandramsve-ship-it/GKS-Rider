@@ -81,7 +81,7 @@ class HistoryResponse {
   const HistoryResponse({required this.orders, required this.pagination});
 
   factory HistoryResponse.fromJson(Map<String, dynamic> json) {
-    final items = (json['orders'] as List<dynamic>?)
+    final items = (json['items'] as List<dynamic>?)
             ?.map((e) => HistoryItem.fromJson(e as Map<String, dynamic>))
             .toList() ??
         [];

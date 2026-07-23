@@ -49,5 +49,11 @@
 	<string>GKS Rider needs your location to go online and track deliveries.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>GKS Rider needs background location access to track your position during deliveries for customers to see your live location.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>GKS Rider needs background location access to track your position during deliveries for customers to see your live location.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

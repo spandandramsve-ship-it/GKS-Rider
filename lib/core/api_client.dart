@@ -65,9 +65,10 @@ class ApiClient {
       if (map.containsKey('success')) {
         if (map['success'] == true) {
           debugPrint('[API] ✅ ${response.requestOptions.method} ${response.requestOptions.uri} (${response.statusCode})');
-          // Replace the full envelope with just the `data` payload if provided,
-          // otherwise keep the full map (e.g. for endpoints returning messages).
-          if (map.containsKey('data') && map['data'] != null) {
+          // Replace the full envelope with just the `data` payload if the key
+          // is present (even if null — e.g. "no active order"), otherwise
+          // keep the full map (e.g. for endpoints returning messages only).
+          if (map.containsKey('data')) {
             response.data = map['data'];
           } else {
             response.data = map;
