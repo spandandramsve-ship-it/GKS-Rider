@@ -90,19 +90,19 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
         final qr = orderState.paymentQr;
 
         return Scaffold(
-          backgroundColor: const Color(0xFF0F0C29),
+          backgroundColor: Colors.white,
           appBar: AppBar(
-            backgroundColor: Colors.transparent,
+            backgroundColor: Colors.white,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new,
-                  color: Colors.white, size: 20),
+                  color: Colors.black, size: 20),
               onPressed: () => context.pop(),
             ),
             title: const Text(
               'UPI Payment',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -111,7 +111,7 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
           ),
           body: Center(
             child: qr == null
-                ? const CircularProgressIndicator(color: Colors.white)
+                ? const CircularProgressIndicator(color: Colors.black)
                 : SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: Column(
@@ -119,9 +119,9 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                       children: [
                         // Amount
                         Text(
-                          '₹${qr.amountRupees.toStringAsFixed(0)}',
+                          'Rs. ${qr.amountRupees.toStringAsFixed(0)}',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontSize: 36,
                             fontWeight: FontWeight.w800,
                           ),
@@ -130,7 +130,7 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                         Text(
                           'Scan to pay via UPI',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: Colors.black.withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                         ),
@@ -140,7 +140,7 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFFD9D9D9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: CachedNetworkImage(
@@ -177,7 +177,7 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                             style: TextStyle(
                               color: _secondsLeft < 60
                                   ? const Color(0xFFE74C3C)
-                                  : Colors.white.withValues(alpha: 0.7),
+                                  : Colors.black.withValues(alpha: 0.7),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
@@ -208,9 +208,9 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                           icon: const Icon(Icons.refresh_rounded, size: 18),
                           label: const Text('Regenerate QR'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.3),
+                            foregroundColor: Colors.black,
+                            side: const BorderSide(
+                              color: Color(0xFFB3B3B3),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -233,14 +233,14 @@ class _PaymentQrScreenState extends State<PaymentQrScreen> {
                                 height: 14,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white54,
+                                  color: Colors.black45,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 'Waiting for payment…',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                   fontSize: 13,
                                 ),
                               ),

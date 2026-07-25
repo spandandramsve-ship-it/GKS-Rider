@@ -5,7 +5,7 @@ import '../../models/history_item.dart';
 import '../../models/rider_summary.dart';
 import '../../services/dashboard_service.dart';
 import '../../core/api_client.dart';
-import '../../widgets/status_chip.dart';
+import '../../widgets/rider_bottom_nav.dart';
 
 /// History screen — cursor-paginated infinite scroll with status tabs
 /// and a Payments sub-view.
@@ -22,7 +22,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final _timeFormat = DateFormat('h:mm a');
   final _currencyFormat = NumberFormat.currency(
     locale: 'en_IN',
-    symbol: '₹',
+    symbol: 'Rs. ',
     decimalDigits: 0,
   );
 
@@ -103,7 +103,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _fetchToken++;
     setState(() {
       _selectedTab = index;
-      _showPayments = false;
       _items.clear();
       _nextCursor = null;
       _hasMore = true;
@@ -112,9 +111,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _fetchPage();
   }
 
-  void _togglePayments() {
-    setState(() => _showPayments = !_showPayments);
-    if (_showPayments && _paymentsSummary == null && !_isLoadingSummary) {
+  void _setPayments(bool showPayments) {
+    if (_showPayments == showPayments) return;
+    setState(() => _showPayments = showPayments);
+    if (showPayments && _paymentsSummary == null && !_isLoadingSummary) {
       _fetchPaymentsSummary();
     }
   }
@@ -137,181 +137,189 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.go('/home'),
-        ),
-        title: const Text(
-          'Order History',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-        ),
-        centerTitle: true,
-        actions: [
-          TextButton.icon(
-            onPressed: _togglePayments,
-            icon: Icon(
-              _showPayments
-                  ? Icons.list_rounded
-                  : Icons.payments_outlined,
-              size: 18,
-            ),
-            label: Text(_showPayments ? 'Orders' : 'Payments'),
-          ),
-        ],
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Tab chips
-          if (!_showPayments)
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _tabs.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  final isSelected = _selectedTab == i;
-                  return FilterChip(
-                    selected: isSelected,
-                    label: Text(_tabs[i].$2),
-                    selectedColor: const Color(0xFF6C63FF).withValues(alpha: 0.15),
-                    checkmarkColor: const Color(0xFF6C63FF),
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFF6C63FF)
-                          : Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.color
-                              ?.withValues(alpha: 0.6),
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                    side: BorderSide(
-                      color: isSelected
-                          ? const Color(0xFF6C63FF).withValues(alpha: 0.3)
-                          : Theme.of(context).dividerColor.withValues(alpha: 0.15),
-                    ),
-                    onSelected: (_) => _switchTab(i),
-                  );
-                },
-              ),
-            ),
-          if (!_showPayments) const SizedBox(height: 8),
-
-          // Payments summary cards
-          if (_showPayments)
+      backgroundColor: Colors.white,
+      bottomNavigationBar: const RiderBottomNav(isHistorySelected: true),
+      body: SafeArea(
+        child: Column(
+          children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(8, 12, 20, 8),
               child: Row(
                 children: [
-                  Expanded(
-                    child: _buildSummaryCard(
-                      'Cash in hand',
-                      _paymentsSummary?.cashCollected,
-                      const Color(0xFFE67E22),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded,
+                        color: Colors.black, size: 24),
+                    onPressed: () => context.go('/home'),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSummaryCard(
-                      'Online Payments',
-                      _paymentsSummary?.onlinePayments,
-                      const Color(0xFF3498DB),
+                  const Text(
+                    'History Section',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 18,
+                      color: Colors.black,
                     ),
                   ),
                 ],
               ),
             ),
-
-          // Error
-          if (_error != null)
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _error!,
-                style: const TextStyle(color: Color(0xFFE74C3C)),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _segment('All', !_showPayments, () => _setPayments(false)),
+                  const SizedBox(width: 40),
+                  _segment('Payments', _showPayments, () => _setPayments(true)),
+                ],
               ),
             ),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFD9D9D9)),
 
-          // List
-          Expanded(
-            child: _items.isEmpty && !_isLoading
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.inbox_rounded,
-                          size: 48,
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color
-                              ?.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No orders yet',
-                          style: TextStyle(
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.color
-                                ?.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
+            if (!_showPayments) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _tabs.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    final isSelected = _selectedTab == i;
+                    return ChoiceChip(
+                      selected: isSelected,
+                      label: Text(_tabs[i].$2),
+                      selectedColor: const Color(0xFFD9D9D9),
+                      backgroundColor: Colors.white,
+                      labelStyle: TextStyle(
+                        color: Colors.black,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w400,
+                        fontSize: 13,
+                      ),
+                      side: const BorderSide(color: Color(0xFFD9D9D9)),
+                      onSelected: (_) => _switchTab(i),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            if (_showPayments)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Cash in hand',
+                        _paymentsSummary?.cashCollected,
+                      ),
                     ),
-                  )
-                : ListView.builder(
-                    controller: _scrollCtrl,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _items.length + (_isLoading ? 1 : 0),
-                    itemBuilder: (_, i) {
-                      if (i >= _items.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildSummaryCard(
+                        'Online Payments',
+                        _paymentsSummary?.onlinePayments,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Color(0xFFE74C3C)),
+                ),
+              ),
+
+            Expanded(
+              child: _items.isEmpty && !_isLoading
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.inbox_rounded,
+                            size: 48,
+                            color: Colors.black.withValues(alpha: 0.25),
                           ),
-                        );
-                      }
-                      return _showPayments
-                          ? _buildPaymentCard(_items[i])
-                          : _buildOrderCard(_items[i]);
-                    },
-                  ),
-          ),
-        ],
+                          const SizedBox(height: 12),
+                          Text(
+                            'No orders yet',
+                            style: TextStyle(
+                              color: Colors.black.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollCtrl,
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      itemCount: _items.length + (_isLoading ? 1 : 0),
+                      itemBuilder: (_, i) {
+                        if (i >= _items.length) {
+                          return const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        }
+                        return _showPayments
+                            ? _buildPaymentCard(_items[i])
+                            : _buildOrderCard(_items[i]);
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSummaryCard(String label, double? value, Color color) {
+  Widget _segment(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFD9D9D9) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            color: selected ? Colors.black : Colors.black.withValues(alpha: 0.6),
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String label, double? value) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        color: const Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withValues(alpha: 0.7),
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 8),
@@ -323,10 +331,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 )
               : Text(
                   _currencyFormat.format(value ?? 0),
-                  style: TextStyle(
-                    fontSize: 20,
+                  style: const TextStyle(
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: color,
+                    color: Colors.black,
                   ),
                 ),
         ],
@@ -347,15 +355,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  // Pastel bg + solid border, matching the Figma history cards.
+  (Color, Color) _bucketPalette(String bucket) {
+    switch (bucket.toUpperCase()) {
+      case 'ONGOING':
+        return (const Color(0xFFFFFFC0), const Color(0xFFA25C00));
+      case 'COMPLETED':
+        return (const Color(0xFFCAFFC0), const Color(0xFF3C6235));
+      case 'FAILED':
+        return (const Color(0xFFFFC0C1), const Color(0xFF6D1314));
+      default:
+        return (const Color(0xFFE0E0E0), const Color(0xFF666666));
+    }
+  }
+
   Widget _buildOrderCard(HistoryItem item) {
-    final color = StatusChip.bucketColor(item.bucket);
+    final (bg, border) = _bucketPalette(item.bucket);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        color: bg.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,12 +385,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+            decoration: const BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: color.withValues(alpha: 0.4)),
             ),
-            child: Icon(Icons.shopping_bag_outlined, color: color, size: 20),
+            child: Icon(Icons.shopping_bag_outlined, color: border, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -381,6 +402,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
                   ),
                 const SizedBox(height: 6),
@@ -402,6 +424,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
+                  color: Colors.black,
                 ),
               ),
               const SizedBox(height: 8),
@@ -410,20 +433,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: color,
+                  color: border,
                 ),
               ),
               if (item.displayTime != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   _timeFormat.format(item.displayTime!.toLocal()),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 11,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.5),
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -441,21 +460,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           TextSpan(
             text: '$label ',
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withValues(alpha: 0.6),
-            ),
+            style: const TextStyle(fontSize: 12, color: Colors.black),
           ),
           TextSpan(
             text: value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
+              color: Colors.black,
             ),
           ),
         ],
@@ -464,30 +476,29 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildPaymentCard(HistoryItem item) {
-    const color = Color(0xFF27AE60);
+    const border = Color(0xFF3C6235);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: const Color(0xFFCAFFC0).withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withValues(alpha: 0.3)),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
             child: Icon(
               item.collectionMethod?.toLowerCase() == 'cash'
                   ? Icons.money_rounded
                   : Icons.qr_code_rounded,
-              color: color,
+              color: Colors.black87,
               size: 22,
             ),
           ),
@@ -502,6 +513,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
                   ),
                 const SizedBox(height: 2),
@@ -510,19 +522,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: color,
+                    color: Colors.black,
                   ),
                 ),
                 Text(
                   item.collectionMethod ?? item.paymentMode ?? '—',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.6),
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.black),
                 ),
               ],
             ),
@@ -532,6 +537,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
+              color: Colors.black,
             ),
           ),
         ],

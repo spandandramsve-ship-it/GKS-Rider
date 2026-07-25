@@ -76,63 +76,55 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F0C29), Color(0xFF302B63), Color(0xFF24243E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(
-                    Icons.delivery_dining_rounded,
-                    size: 48,
-                    color: Colors.white,
-                  ),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'GKS Rider',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                  ),
+                child: const Icon(
+                  Icons.delivery_dining_rounded,
+                  size: 48,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Delivery Partner',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                  ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'GKS Rider',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
                 ),
-                const SizedBox(height: 40),
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white70,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Delivery Partner',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 40),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,8 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Floating SOS button — sits above the bottom sheet on job screens and
-/// opens the emergency options panel.
+/// opens a radial menu of emergency options.
 class EmergencySosButton extends StatelessWidget {
   const EmergencySosButton({super.key});
 
@@ -14,19 +15,19 @@ class EmergencySosButton extends StatelessWidget {
         width: 52,
         height: 52,
         decoration: BoxDecoration(
-          color: const Color(0xFFE74C3C),
+          color: const Color(0xFF9E9E9E),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFE74C3C).withValues(alpha: 0.4),
-              blurRadius: 12,
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: const Icon(
           Icons.shield_rounded,
-          color: Colors.white,
+          color: Colors.black87,
           size: 26,
         ),
       ),
@@ -34,13 +35,19 @@ class EmergencySosButton extends StatelessWidget {
   }
 }
 
-/// Opens the emergency options bottom sheet.
+/// Opens the emergency options radial menu, anchored where the SOS
+/// button sits (bottom-right), over a dimmed/blurred backdrop.
 Future<void> showEmergencyPanel(BuildContext context) {
-  return showModalBottomSheet(
+  return showGeneralDialog(
     context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    builder: (_) => const _EmergencyPanel(),
+    barrierDismissible: true,
+    barrierLabel: 'Emergency',
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 200),
+    pageBuilder: (_, __, ___) => const _EmergencyOverlay(),
+    transitionBuilder: (_, animation, __, child) {
+      return FadeTransition(opacity: animation, child: child);
+    },
   );
 }
 
@@ -51,108 +58,96 @@ Future<void> _call(String phone) async {
   }
 }
 
-class _EmergencyPanel extends StatelessWidget {
-  const _EmergencyPanel();
+class _EmergencyOverlay extends StatelessWidget {
+  const _EmergencyOverlay();
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        margin: const EdgeInsets.all(12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pop(),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          color: const Color(0x803B3B3B),
+          child: SafeArea(
+            child: Stack(
               children: [
-                const Icon(Icons.shield_rounded, color: Color(0xFFE74C3C)),
-                const SizedBox(width: 8),
-                const Text(
-                  'Emergency',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                Positioned(
+                  right: 20,
+                  bottom: 90,
+                  child: GestureDetector(
+                    onTap: () {}, // absorb taps on the menu itself
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _EmergencyPill(
+                          icon: Icons.medical_services_rounded,
+                          label: 'Medical Emergency',
+                          onTap: () => _call('108'),
+                        ),
+                        const SizedBox(height: 10),
+                        _EmergencyPill(
+                          icon: Icons.local_police_rounded,
+                          label: 'Police Help',
+                          onTap: () => _call('100'),
+                        ),
+                        const SizedBox(height: 10),
+                        _EmergencyPill(
+                          icon: Icons.warning_amber_rounded,
+                          label: 'Accident',
+                          onTap: () => _call('108'),
+                        ),
+                        const SizedBox(height: 10),
+                        _EmergencyPill(
+                          icon: Icons.two_wheeler_rounded,
+                          label: 'Vehicle Breakdown',
+                          onTap: () => _call('1073'),
+                        ),
+                        const SizedBox(height: 10),
+                        _EmergencyPill(
+                          icon: Icons.support_agent_rounded,
+                          label: 'Call Support',
+                          onTap: () => _call('18001234567'),
+                        ),
+                        const SizedBox(height: 14),
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF9E9E9E),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.black87,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Select an option to get help right away',
-              style: TextStyle(
-                fontSize: 13,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _EmergencyOption(
-              icon: Icons.medical_services_rounded,
-              label: 'Medical Emergency',
-              color: const Color(0xFFE74C3C),
-              onTap: () => _call('108'),
-            ),
-            const SizedBox(height: 10),
-            _EmergencyOption(
-              icon: Icons.local_police_rounded,
-              label: 'Police Help',
-              color: const Color(0xFF3498DB),
-              onTap: () => _call('100'),
-            ),
-            const SizedBox(height: 10),
-            _EmergencyOption(
-              icon: Icons.warning_amber_rounded,
-              label: 'Accident',
-              color: const Color(0xFFE67E22),
-              onTap: () => _call('108'),
-            ),
-            const SizedBox(height: 10),
-            _EmergencyOption(
-              icon: Icons.two_wheeler_rounded,
-              label: 'Vehicle Breakdown',
-              color: const Color(0xFF9B59B6),
-              onTap: () => _call('1073'),
-            ),
-            const SizedBox(height: 10),
-            _EmergencyOption(
-              icon: Icons.support_agent_rounded,
-              label: 'Call Support',
-              color: const Color(0xFF27AE60),
-              onTap: () => _call('18001234567'),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _EmergencyOption extends StatelessWidget {
+class _EmergencyPill extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
   final VoidCallback onTap;
 
-  const _EmergencyOption({
+  const _EmergencyPill({
     required this.icon,
     required this.label,
-    required this.color,
     required this.onTap,
   });
 
@@ -161,29 +156,28 @@ class _EmergencyOption extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         onTap: () {
           Navigator.of(context).pop();
           onTap();
         },
         child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.25)),
+            color: const Color(0xFFD9D9D9),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 12),
+              Icon(icon, size: 18, color: Colors.black87),
+              const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 15,
+                style: const TextStyle(
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: color,
+                  color: Color(0xFF010101),
                 ),
               ),
             ],

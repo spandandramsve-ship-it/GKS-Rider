@@ -11,6 +11,9 @@ import '../../widgets/loading_overlay.dart';
 import '../../widgets/emergency_sos.dart';
 import '../../widgets/quick_message_sheet.dart';
 
+const _cardGrey = Color(0xFFD9D9D9);
+const _outlineGrey = Color(0xFFB3B3B3);
+
 /// Delivery screen — customer map, call, payment panel (COD), delivery-code entry.
 class DeliveryScreen extends StatefulWidget {
   const DeliveryScreen({super.key});
@@ -84,6 +87,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         final canEnterCode = !isCod || isPaid || orderState.canCompleteDelivery;
 
         return Scaffold(
+          backgroundColor: Colors.white,
           body: LoadingOverlay(
             isLoading: orderState.isLoading,
             child: Column(
@@ -112,7 +116,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                                 height: 40,
                                 child: const Icon(
                                   Icons.location_on_rounded,
-                                  color: Color(0xFF27AE60),
+                                  color: Color(0xFFE74C3C),
                                   size: 36,
                                 ),
                               ),
@@ -155,16 +159,16 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
                         top: Radius.circular(24),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Color(0x14000000),
                           blurRadius: 12,
-                          offset: const Offset(0, -4),
+                          offset: Offset(0, -4),
                         ),
                       ],
                     ),
@@ -172,45 +176,47 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Active order badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _cardGrey,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Active Order',
+                              style: TextStyle(fontSize: 12, color: Colors.black),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
                           // Customer info
                           Row(
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF27AE60)
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.person_rounded,
-                                  color: Color(0xFF27AE60),
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    const Text(
+                                      'Deliver to',
+                                      style: TextStyle(
+                                          fontSize: 12, color: Colors.black),
+                                    ),
                                     Text(
-                                      'Deliver to ${order.customerName ?? 'Customer'}',
+                                      order.customerName ?? 'Customer',
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
+                                        color: Colors.black,
                                       ),
                                     ),
                                     if (order.delivery != null)
                                       Text(
                                         order.delivery!.displayAddress,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 12,
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.color
-                                              ?.withValues(alpha: 0.6),
+                                          color: Colors.black54,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -223,27 +229,13 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                           const SizedBox(height: 14),
 
                           // Navigate — full width
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => _openInMaps(
-                                deliveryLatLng.latitude,
-                                deliveryLatLng.longitude,
-                              ),
-                              icon: const Icon(Icons.map_rounded, size: 18),
-                              label: const Text('Navigate'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF3498DB),
-                                side: const BorderSide(
-                                  color: Color(0xFF3498DB),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                              ),
+                          _outlineButton(
+                            icon: Icons.map_rounded,
+                            label: 'Navigate',
+                            fullWidth: true,
+                            onTap: () => _openInMaps(
+                              deliveryLatLng.latitude,
+                              deliveryLatLng.longitude,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -253,52 +245,24 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                             children: [
                               if (order.customerPhone != null)
                                 Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () =>
+                                  child: _outlineButton(
+                                    icon: Icons.call_rounded,
+                                    label: 'Call',
+                                    onTap: () =>
                                         _callCustomer(order.customerPhone!),
-                                    icon: const Icon(Icons.call_rounded,
-                                        size: 18),
-                                    label: const Text('Call'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF27AE60),
-                                      side: const BorderSide(
-                                        color: Color(0xFF27AE60),
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                    ),
                                   ),
                                 ),
                               if (order.customerPhone != null)
                                 const SizedBox(width: 10),
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => showQuickMessageSheet(
+                                child: _outlineButton(
+                                  icon: Icons.chat_bubble_outline_rounded,
+                                  label: 'Chat',
+                                  onTap: () => showQuickMessageSheet(
                                     context,
                                     phone: order.customerPhone,
                                     recipientLabel:
                                         order.customerName ?? 'Customer',
-                                  ),
-                                  icon: const Icon(Icons.chat_bubble_outline_rounded,
-                                      size: 18),
-                                  label: const Text('Chat'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF6C63FF),
-                                    side: const BorderSide(
-                                      color: Color(0xFF6C63FF),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
                                   ),
                                 ),
                               ),
@@ -317,23 +281,18 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF27AE60)
-                                    .withValues(alpha: 0.1),
+                                color: _cardGrey,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFF27AE60)
-                                      .withValues(alpha: 0.3),
-                                ),
                               ),
                               child: const Row(
                                 children: [
                                   Icon(Icons.check_circle_rounded,
-                                      color: Color(0xFF27AE60), size: 20),
+                                      color: Colors.black, size: 20),
                                   SizedBox(width: 10),
                                   Text(
-                                    'Payment collected ✓',
+                                    'Payment collected',
                                     style: TextStyle(
-                                      color: Color(0xFF27AE60),
+                                      color: Colors.black,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -360,6 +319,37 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     );
   }
 
+  Widget _outlineButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+    bool fullWidth = false,
+  }) {
+    return SizedBox(
+      width: fullWidth ? double.infinity : null,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 16, color: Colors.black),
+        label: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          side: const BorderSide(color: _outlineGrey),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPaymentPanel(
     BuildContext context,
     ActiveOrderState orderState,
@@ -367,26 +357,22 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFE67E22).withValues(alpha: 0.06),
+        color: _cardGrey,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE67E22).withValues(alpha: 0.2),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.payments_outlined,
-                  color: Color(0xFFE67E22), size: 20),
+              Icon(Icons.payments_outlined, color: Colors.black, size: 20),
               SizedBox(width: 8),
               Text(
                 'Collect Payment (COD)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFE67E22),
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -395,8 +381,10 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: orderState.isLoading
+                child: _pillButton(
+                  icon: Icons.money_rounded,
+                  label: 'Cash',
+                  onTap: orderState.isLoading
                       ? null
                       : () async {
                           final ok = await orderState.collectCash();
@@ -406,39 +394,57 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                             showErrorSnackBar(context, orderState.error!);
                           }
                         },
-                  icon: const Icon(Icons.money_rounded, size: 18),
-                  label: const Text('Cash'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF27AE60),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: orderState.isLoading
+                child: _pillButton(
+                  icon: Icons.qr_code_2_rounded,
+                  label: 'UPI QR',
+                  onTap: orderState.isLoading
                       ? null
                       : () => context.push('/job/payment-qr'),
-                  icon: const Icon(Icons.qr_code_2_rounded, size: 18),
-                  label: const Text('UPI QR'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3498DB),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _pillButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: _outlineGrey),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: Colors.black),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -450,39 +456,29 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF6C63FF).withValues(alpha: 0.06),
+        color: _cardGrey,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: const Color(0xFF4B4A4A), style: BorderStyle.solid),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(Icons.pin_rounded, color: Color(0xFF6C63FF), size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Delivery Code',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF6C63FF),
-                ),
+          const Center(
+            child: Text(
+              'Enter the OTP:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Ask the customer to read their delivery code aloud',
             style: TextStyle(
               fontSize: 12,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withValues(alpha: 0.6),
+              color: Colors.black.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 14),
@@ -503,8 +499,9 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                   });
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF6C63FF),
-                  side: const BorderSide(color: Color(0xFF6C63FF)),
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: _outlineGrey),
+                  backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -524,30 +521,24 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 8,
+                color: Colors.black,
               ),
               decoration: InputDecoration(
                 counterText: '',
-                hintText: '• • • • • •',
+                hintText: '- - - - - -',
                 hintStyle: TextStyle(
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   letterSpacing: 8,
                 ),
                 filled: true,
-                fillColor: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.05),
+                fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: Color(0xFF6C63FF)),
+                  borderSide: const BorderSide(color: _outlineGrey),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -556,8 +547,8 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
+              height: 48,
+              child: ElevatedButton(
                 onPressed: orderState.isLoading
                     ? null
                     : () async {
@@ -577,21 +568,17 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                         }
                         // If success, the Consumer will show DELIVERED state.
                       },
-                icon: const Icon(Icons.check_circle_rounded),
-                label: const Text(
-                  'Confirm Delivery',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF27AE60),
-                  foregroundColor: Colors.white,
+                  backgroundColor: const Color(0xFF888888),
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 0,
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -606,79 +593,71 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     ActiveOrderState orderState,
   ) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F0C29), Color(0xFF302B63), Color(0xFF24243E)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF27AE60).withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Color(0xFF27AE60),
-                    size: 48,
-                  ),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: _cardGrey,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Delivered!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.black,
+                  size: 48,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Order delivered successfully',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 15,
-                  ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Delivered!',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 40),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        orderState.fetchActiveOrder();
-                        context.go('/home');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Order delivered successfully',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 40),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      orderState.fetchActiveOrder();
+                      context.go('/home');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Text(
-                        'Back to Home',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    child: const Text(
+                      'Back to Home',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

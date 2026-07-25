@@ -1,8 +1,22 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../config/env.dart';
 import 'api_exception.dart';
 import 'session.dart';
+
+const _jsonPrinter = JsonEncoder.withIndent('  ');
+
+/// Pretty-prints [data] for logging; falls back to `toString()` for
+/// anything that isn't directly JSON-encodable.
+String _prettyBody(dynamic data) {
+  if (data == null) return 'null';
+  try {
+    return _jsonPrinter.convert(data);
+  } catch (_) {
+    return data.toString();
+  }
+}
 
 /// Callback invoked when a 401 is received anywhere — the app should
 /// clear session and navigate to Login.
@@ -50,6 +64,9 @@ class ApiClient {
       options.headers['Authorization'] = 'Bearer $token';
     }
     debugPrint('[API] 🚀 ${options.method} ${options.uri}');
+    if (options.data != null) {
+      debugPrint('[API] 🚀 Request body: ${_prettyBody(options.data)}');
+    }
     handler.next(options);
   }
 
@@ -60,6 +77,10 @@ class ApiClient {
     ResponseInterceptorHandler handler,
   ) {
     final body = response.data;
+    debugPrint(
+      '[API] 📦 ${response.requestOptions.method} ${response.requestOptions.uri} '
+      'response body: ${_prettyBody(body)}',
+    );
     if (body is Map) {
       final map = Map<String, dynamic>.from(body);
       if (map.containsKey('success')) {
@@ -111,6 +132,11 @@ class ApiClient {
       handler.reject(err);
       return;
     }
+
+    debugPrint(
+      '[API] 📦 ${err.requestOptions.method} ${err.requestOptions.uri} '
+      'error response body: ${_prettyBody(err.response?.data)}',
+    );
 
     final statusCode = err.response?.statusCode;
     String message = 'Something went wrong';

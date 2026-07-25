@@ -6,6 +6,8 @@ import '../../state/online_state.dart';
 import '../../state/active_order_state.dart';
 import '../../widgets/loading_overlay.dart';
 
+const _cardGrey = Color(0xFFD9D9D9);
+
 /// Profile screen — read-only rider info + logout.
 ///
 /// Sensitive PII (Aadhaar, PAN) is masked. Editing is admin-only.
@@ -52,14 +54,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final rider = auth.rider;
 
         return Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
+            backgroundColor: Colors.white,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              icon: const Icon(Icons.arrow_back_ios_new,
+                  size: 20, color: Colors.black),
               onPressed: () => context.go('/home'),
             ),
             title: const Text(
               'Profile',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: Colors.black,
+              ),
             ),
             centerTitle: true,
             elevation: 0,
@@ -80,9 +89,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF)
-                                .withValues(alpha: 0.15),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFBDBDBD),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -93,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               style: const TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF6C63FF),
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -104,6 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
+                            color: Colors.black,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -113,15 +122,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: _statusColor(rider.availabilityStatus)
-                                .withValues(alpha: 0.12),
+                            color: _cardGrey,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             _statusLabel(rider.availabilityStatus),
-                            style: TextStyle(
-                              color:
-                                  _statusColor(rider.availabilityStatus),
+                            style: const TextStyle(
+                              color: Colors.black,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
@@ -173,23 +180,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         SizedBox(
                           width: double.infinity,
                           height: 52,
-                          child: ElevatedButton.icon(
+                          child: OutlinedButton.icon(
                             onPressed: _isLoggingOut ? null : _logout,
-                            icon: const Icon(Icons.logout_rounded),
+                            icon: const Icon(Icons.logout_rounded,
+                                color: Colors.black),
                             label: const Text(
                               'Logout',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.black,
                               ),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE74C3C),
-                              foregroundColor: Colors.white,
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: Color(0xFFB3B3B3)),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              elevation: 0,
                             ),
                           ),
                         ),
@@ -198,11 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Profile changes can only be made by an admin.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.color
-                                ?.withValues(alpha: 0.4),
+                            color: Colors.black.withValues(alpha: 0.4),
                           ),
                         ),
                         const SizedBox(height: 40),
@@ -224,15 +228,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: _cardGrey.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: _cardGrey),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: const Color(0xFF6C63FF)),
+          Icon(icon, size: 20, color: Colors.black87),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,11 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -255,6 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -268,18 +267,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _maskPii(String value) {
     if (value.length <= 4) return '••••';
     return '${'•' * (value.length - 4)}${value.substring(value.length - 4)}';
-  }
-
-  Color _statusColor(String? status) {
-    switch (status) {
-      case 'active-free':
-        return const Color(0xFF27AE60);
-      case 'active-busy':
-        return const Color(0xFFE67E22);
-      case 'offline':
-      default:
-        return Colors.grey;
-    }
   }
 
   String _statusLabel(String? status) {

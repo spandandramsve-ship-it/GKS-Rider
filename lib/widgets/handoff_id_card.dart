@@ -15,19 +15,9 @@ class HandoffIdCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1A1A2E).withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        color: const Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF4B4A4A), style: BorderStyle.solid),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -35,7 +25,7 @@ class HandoffIdCard extends StatelessWidget {
           const Text(
             'HANDOFF ID',
             style: TextStyle(
-              color: Color(0xFF8899AA),
+              color: Colors.black54,
               fontSize: 13,
               fontWeight: FontWeight.w600,
               letterSpacing: 2,
@@ -45,7 +35,7 @@ class HandoffIdCard extends StatelessWidget {
           Text(
             pickupToken,
             style: const TextStyle(
-              color: Colors.white,
+              color: Colors.black,
               fontSize: 48,
               fontWeight: FontWeight.w800,
               letterSpacing: 4,
@@ -55,16 +45,14 @@ class HandoffIdCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF27AE60).withValues(alpha: 0.15),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF27AE60).withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: const Color(0xFFB3B3B3)),
             ),
             child: const Text(
               'Quote this to the store',
               style: TextStyle(
-                color: Color(0xFF27AE60),
+                color: Colors.black,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

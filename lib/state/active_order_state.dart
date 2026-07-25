@@ -65,8 +65,17 @@ class ActiveOrderState extends ChangeNotifier {
 
   Future<void> fetchActiveOrder() async {
     try {
+      final previousOrderId = _order?.id;
       _order = await _orderService.getActive();
       _error = null;
+
+      // A new order (different id, or none) must not inherit payment
+      // state from whatever was collected on the previous delivery.
+      if (_order?.id != previousOrderId) {
+        _paymentStatus = null;
+        _paymentQr = null;
+        _stopPaymentPolling();
+      }
 
       // If delivered or no order, stop tracking.
       if (_order == null || _order!.status == 'DELIVERED') {

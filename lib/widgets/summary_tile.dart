@@ -17,54 +17,46 @@ class SummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = iconColor ?? Theme.of(context).colorScheme.primary;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: 100,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFD9D9D9),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: Colors.black87, size: 22),
           ),
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: 22,
               fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withValues(alpha: 0.7),
+              fontSize: 11,
+              height: 1.2,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : Colors.black.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),

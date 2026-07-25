@@ -12,6 +12,9 @@ import '../../widgets/loading_overlay.dart';
 import '../../widgets/emergency_sos.dart';
 import '../../widgets/quick_message_sheet.dart';
 
+const _cardGrey = Color(0xFFD9D9D9);
+const _outlineGrey = Color(0xFFB3B3B3);
+
 /// Reached-store screen — pickup map, handoff ID, and status-driven
 /// action buttons (reached → picked up).
 class ReachedStoreScreen extends StatelessWidget {
@@ -22,6 +25,33 @@ class ReachedStoreScreen extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
+  }
+
+  Widget _outlineButton({
+    required IconData icon,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 16, color: Colors.black),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        backgroundColor: Colors.white,
+        side: const BorderSide(color: _outlineGrey),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+      ),
+    );
   }
 
   @override
@@ -65,6 +95,7 @@ class ReachedStoreScreen extends StatelessWidget {
         final isReached = order.status == 'REACHED_STORE';
 
         return Scaffold(
+          backgroundColor: Colors.white,
           body: LoadingOverlay(
             isLoading: orderState.isLoading,
             child: Column(
@@ -138,16 +169,16 @@ class ReachedStoreScreen extends StatelessWidget {
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
                         top: Radius.circular(24),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
+                          color: Color(0x14000000),
                           blurRadius: 12,
-                          offset: const Offset(0, -4),
+                          offset: Offset(0, -4),
                         ),
                       ],
                     ),
@@ -155,24 +186,27 @@ class ReachedStoreScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Active order badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _cardGrey,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Active Order',
+                              style: TextStyle(fontSize: 12, color: Colors.black),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
                           // Store info
                           Row(
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFE74C3C)
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.store_rounded,
-                                  color: Color(0xFFE74C3C),
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
+                              const Icon(Icons.store_rounded,
+                                  size: 20, color: Colors.black87),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,18 +216,15 @@ class ReachedStoreScreen extends StatelessWidget {
                                       style: const TextStyle(
                                         fontSize: 17,
                                         fontWeight: FontWeight.w700,
+                                        color: Colors.black,
                                       ),
                                     ),
                                     if (order.orderNumber != null)
                                       Text(
                                         'Order #${order.orderNumber}',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 13,
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.color
-                                              ?.withValues(alpha: 0.6),
+                                          color: Colors.black54,
                                         ),
                                       ),
                                   ],
@@ -208,53 +239,24 @@ class ReachedStoreScreen extends StatelessWidget {
                             children: [
                               if (order.storePhone != null)
                                 Expanded(
-                                  child: OutlinedButton.icon(
-                                    onPressed: () =>
+                                  child: _outlineButton(
+                                    icon: Icons.call_rounded,
+                                    label: 'Call',
+                                    onTap: () =>
                                         _callStore(order.storePhone!),
-                                    icon: const Icon(Icons.call_rounded,
-                                        size: 18),
-                                    label: const Text('Call'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF27AE60),
-                                      side: const BorderSide(
-                                        color: Color(0xFF27AE60),
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                    ),
                                   ),
                                 ),
                               if (order.storePhone != null)
                                 const SizedBox(width: 10),
                               Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: () => showQuickMessageSheet(
+                                child: _outlineButton(
+                                  icon: Icons.chat_bubble_outline_rounded,
+                                  label: 'Chat',
+                                  onTap: () => showQuickMessageSheet(
                                     context,
                                     phone: order.storePhone,
                                     recipientLabel:
                                         order.storeName ?? 'Store',
-                                  ),
-                                  icon: const Icon(
-                                      Icons.chat_bubble_outline_rounded,
-                                      size: 18),
-                                  label: const Text('Chat'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF6C63FF),
-                                    side: const BorderSide(
-                                      color: Color(0xFF6C63FF),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
                                   ),
                                 ),
                               ),
@@ -267,17 +269,14 @@ class ReachedStoreScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.1),
+                                color: _cardGrey,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.amber.withValues(alpha: 0.3),
-                                ),
                               ),
                               child: Row(
                                 children: [
                                   const Icon(
                                     Icons.hourglass_top_rounded,
-                                    color: Colors.amber,
+                                    color: Colors.black,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 10),
@@ -289,7 +288,7 @@ class ReachedStoreScreen extends StatelessWidget {
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color: Color(0xFFD4A017),
+                                        color: Colors.black,
                                       ),
                                     ),
                                   ),
@@ -310,17 +309,14 @@ class ReachedStoreScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withValues(alpha: 0.06),
+                                color: _cardGrey,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
                                   const Icon(
                                     Icons.tag_rounded,
-                                    color: Color(0xFF6C63FF),
+                                    color: Colors.black,
                                     size: 20,
                                   ),
                                   const SizedBox(width: 10),
@@ -329,6 +325,7 @@ class ReachedStoreScreen extends StatelessWidget {
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
+                                      color: Colors.black,
                                     ),
                                   ),
                                 ],
@@ -366,7 +363,7 @@ class ReachedStoreScreen extends StatelessWidget {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3498DB),
+                                  backgroundColor: Colors.black,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
@@ -383,11 +380,7 @@ class ReachedStoreScreen extends StatelessWidget {
                               'Quote the handoff ID to the store, collect the bag, then mark picked up.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.6),
+                                color: Colors.black.withValues(alpha: 0.6),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -421,7 +414,7 @@ class ReachedStoreScreen extends StatelessWidget {
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF27AE60),
+                                  backgroundColor: Colors.black,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),

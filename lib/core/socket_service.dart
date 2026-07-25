@@ -1,7 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../config/env.dart';
+
+const _jsonPrinter = JsonEncoder.withIndent('  ');
+
+/// Pretty-prints [data] for logging; falls back to `toString()` for
+/// anything that isn't directly JSON-encodable.
+String _prettyPayload(dynamic data) {
+  if (data == null) return 'null';
+  try {
+    return _jsonPrinter.convert(data);
+  } catch (_) {
+    return data.toString();
+  }
+}
 
 /// Manages the socket.io connection for realtime events.
 ///
@@ -9,6 +23,9 @@ import '../config/env.dart';
 /// - Passes JWT via `auth.token` on handshake.
 /// - Listens for `order:assigned` and `order:status`.
 /// - Emits `rider:location` for live tracking.
+///
+/// Every inbound/outbound event is logged via `debugPrint` with its
+/// full payload for debugging.
 class SocketService {
   SocketService._();
   static final SocketService instance = SocketService._();
@@ -52,11 +69,11 @@ class SocketService {
     );
 
     _socket!.onConnect((_) {
-      debugPrint('[Socket] Connected');
+      debugPrint('[Socket] 🔌 connect (id: ${_socket?.id})');
     });
 
     _socket!.on('order:assigned', (data) {
-      debugPrint('[Socket] order:assigned received');
+      debugPrint('[Socket] 📥 order:assigned payload: ${_prettyPayload(data)}');
       if (data is Map<String, dynamic>) {
         _orderAssignedController.add(data);
       } else if (data is Map) {
@@ -65,7 +82,7 @@ class SocketService {
     });
 
     _socket!.on('order:status', (data) {
-      debugPrint('[Socket] order:status received');
+      debugPrint('[Socket] 📥 order:status payload: ${_prettyPayload(data)}');
       if (data is Map<String, dynamic>) {
         _orderStatusController.add(data);
       } else if (data is Map) {
@@ -74,7 +91,7 @@ class SocketService {
     });
 
     _socket!.onConnectError((data) {
-      debugPrint('[Socket] connect_error: $data');
+      debugPrint('[Socket] ❌ connect_error: ${_prettyPayload(data)}');
       // Auth failure on handshake — treat as 401.
       final msg = data?.toString() ?? '';
       if (msg.contains('auth') ||
@@ -84,12 +101,28 @@ class SocketService {
       }
     });
 
-    _socket!.onDisconnect((_) {
-      debugPrint('[Socket] Disconnected');
+    _socket!.onError((data) {
+      debugPrint('[Socket] ❌ error: ${_prettyPayload(data)}');
     });
 
-    _socket!.onReconnect((_) {
-      debugPrint('[Socket] Reconnected');
+    _socket!.onDisconnect((reason) {
+      debugPrint('[Socket] 🔌 disconnect: ${_prettyPayload(reason)}');
+    });
+
+    _socket!.onReconnect((data) {
+      debugPrint('[Socket] 🔁 reconnect: ${_prettyPayload(data)}');
+    });
+
+    _socket!.onReconnectAttempt((data) {
+      debugPrint('[Socket] 🔁 reconnect_attempt: ${_prettyPayload(data)}');
+    });
+
+    _socket!.onReconnectError((data) {
+      debugPrint('[Socket] ❌ reconnect_error: ${_prettyPayload(data)}');
+    });
+
+    _socket!.onReconnectFailed((data) {
+      debugPrint('[Socket] ❌ reconnect_failed: ${_prettyPayload(data)}');
     });
 
     _socket!.connect();
@@ -98,7 +131,9 @@ class SocketService {
   // ── Emit rider location ─────────────────────────────────────────────
 
   void emitLocation(double lat, double lng) {
-    _socket?.emit('rider:location', {'lat': lat, 'lng': lng});
+    final payload = {'lat': lat, 'lng': lng};
+    debugPrint('[Socket] 📤 rider:location payload: ${_prettyPayload(payload)}');
+    _socket?.emit('rider:location', payload);
   }
 
   // ── Disconnect ──────────────────────────────────────────────────────

@@ -51,8 +51,9 @@ class _QuickMessageSheet extends StatelessWidget {
         margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFD9D9D9)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -63,7 +64,7 @@ class _QuickMessageSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: Colors.black.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -71,7 +72,11 @@ class _QuickMessageSheet extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Message $recipientLabel',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -80,36 +85,38 @@ class _QuickMessageSheet extends StatelessWidget {
                   : 'Send a quick message via SMS',
               style: TextStyle(
                 fontSize: 13,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.6),
+                color: Colors.black.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 16),
             for (final msg in _quickMessages) ...[
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: phone == null
-                      ? null
-                      : () {
-                          Navigator.of(context).pop();
-                          _sendSms(phone!, msg);
-                        },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF6C63FF),
-                    side: BorderSide(
-                      color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
+                child: Material(
+                  color: const Color(0xFFB1B1B1),
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: phone == null
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            _sendSms(phone!, msg);
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Center(
+                        child: Text(
+                          msg,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    alignment: Alignment.centerLeft,
                   ),
-                  child: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
               const SizedBox(height: 10),

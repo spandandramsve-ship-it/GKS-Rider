@@ -22,6 +22,9 @@ class OnlineState extends ChangeNotifier {
   RiderSummary? _summary;
   RiderSummary? get summary => _summary;
 
+  String _summaryPeriod = 'today';
+  String get summaryPeriod => _summaryPeriod;
+
   // ── Go Online ─────────────────────────────────────────────────────
 
   Future<bool> goOnline() async {
@@ -68,9 +71,10 @@ class OnlineState extends ChangeNotifier {
 
   // ── Summary tiles ─────────────────────────────────────────────────
 
-  Future<void> fetchSummary({String period = 'today'}) async {
+  Future<void> fetchSummary({String? period}) async {
+    _summaryPeriod = period ?? _summaryPeriod;
     try {
-      _summary = await _dashService.getSummary(period: period);
+      _summary = await _dashService.getSummary(period: _summaryPeriod);
       notifyListeners();
     } catch (e) {
       debugPrint('[OnlineState] Summary fetch failed: $e');
