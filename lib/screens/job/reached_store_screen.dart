@@ -3,16 +3,26 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../state/active_order_state.dart';
 import '../../widgets/handoff_id_card.dart';
 import '../../widgets/status_chip.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../widgets/emergency_sos.dart';
+import '../../widgets/quick_message_sheet.dart';
 
 /// Reached-store screen — pickup map, handoff ID, and status-driven
 /// action buttons (reached → picked up).
 class ReachedStoreScreen extends StatelessWidget {
   const ReachedStoreScreen({super.key});
+
+  Future<void> _callStore(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +123,11 @@ class ReachedStoreScreen extends StatelessWidget {
                         right: 12,
                         child: StatusChip(status: order.status),
                       ),
+                      const Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: EmergencySosButton(),
+                      ),
                     ],
                   ),
                 ),
@@ -182,6 +197,65 @@ class ReachedStoreScreen extends StatelessWidget {
                                         ),
                                       ),
                                   ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Call + Chat
+                          Row(
+                            children: [
+                              if (order.storePhone != null)
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () =>
+                                        _callStore(order.storePhone!),
+                                    icon: const Icon(Icons.call_rounded,
+                                        size: 18),
+                                    label: const Text('Call'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF27AE60),
+                                      side: const BorderSide(
+                                        color: Color(0xFF27AE60),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (order.storePhone != null)
+                                const SizedBox(width: 10),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => showQuickMessageSheet(
+                                    context,
+                                    phone: order.storePhone,
+                                    recipientLabel:
+                                        order.storeName ?? 'Store',
+                                  ),
+                                  icon: const Icon(
+                                      Icons.chat_bubble_outline_rounded,
+                                      size: 18),
+                                  label: const Text('Chat'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF6C63FF),
+                                    side: const BorderSide(
+                                      color: Color(0xFF6C63FF),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],

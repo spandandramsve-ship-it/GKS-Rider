@@ -9,6 +9,7 @@ import '../../widgets/summary_tile.dart';
 import '../../widgets/status_chip.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../widgets/emergency_sos.dart';
 
 /// Home screen — online/offline toggle, current job card, today's summary.
 class HomeScreen extends StatefulWidget {
@@ -60,40 +61,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           body: LoadingOverlay(
             isLoading: online.isLoading,
             child: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  await orderState.fetchActiveOrder();
-                  await online.fetchSummary();
-                },
-                child: CustomScrollView(
-                  slivers: [
-                    // Header
-                    SliverToBoxAdapter(child: _buildHeader(auth, online)),
+              child: Stack(
+                children: [
+                  RefreshIndicator(
+                    onRefresh: () async {
+                      await orderState.fetchActiveOrder();
+                      await online.fetchSummary();
+                    },
+                    child: CustomScrollView(
+                      slivers: [
+                        // Header
+                        SliverToBoxAdapter(child: _buildHeader(auth, online)),
 
-                    // Online toggle
-                    SliverToBoxAdapter(
-                      child: _buildOnlineToggle(online, orderState),
+                        // Online toggle
+                        SliverToBoxAdapter(
+                          child: _buildOnlineToggle(online, orderState),
+                        ),
+
+                        // Active job card
+                        if (orderState.hasOrder)
+                          SliverToBoxAdapter(
+                            child: _buildJobCard(orderState),
+                          ),
+
+                        // Waiting message
+                        if (!orderState.hasOrder && online.isOnline)
+                          SliverToBoxAdapter(child: _buildWaitingCard()),
+
+                        // Summary tiles
+                        SliverToBoxAdapter(child: _buildSummary(online)),
+
+                        // Bottom padding
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 100),
+                        ),
+                      ],
                     ),
-
-                    // Active job card
-                    if (orderState.hasOrder)
-                      SliverToBoxAdapter(
-                        child: _buildJobCard(orderState),
-                      ),
-
-                    // Waiting message
-                    if (!orderState.hasOrder && online.isOnline)
-                      SliverToBoxAdapter(child: _buildWaitingCard()),
-
-                    // Summary tiles
-                    SliverToBoxAdapter(child: _buildSummary(online)),
-
-                    // Bottom padding
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 100),
+                  ),
+                  if (orderState.hasOrder)
+                    const Positioned(
+                      bottom: 16,
+                      right: 20,
+                      child: EmergencySosButton(),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),

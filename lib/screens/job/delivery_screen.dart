@@ -8,6 +8,8 @@ import '../../state/active_order_state.dart';
 import '../../widgets/status_chip.dart';
 import '../../widgets/error_banner.dart';
 import '../../widgets/loading_overlay.dart';
+import '../../widgets/emergency_sos.dart';
+import '../../widgets/quick_message_sheet.dart';
 
 /// Delivery screen — customer map, call, payment panel (COD), delivery-code entry.
 class DeliveryScreen extends StatefulWidget {
@@ -138,6 +140,11 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                         right: 12,
                         child: StatusChip(status: order.status),
                       ),
+                      const Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: EmergencySosButton(),
+                      ),
                     ],
                   ),
                 ),
@@ -215,7 +222,33 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Action buttons: Call + Open in Maps
+                          // Navigate — full width
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _openInMaps(
+                                deliveryLatLng.latitude,
+                                deliveryLatLng.longitude,
+                              ),
+                              icon: const Icon(Icons.map_rounded, size: 18),
+                              label: const Text('Navigate'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF3498DB),
+                                side: const BorderSide(
+                                  color: Color(0xFF3498DB),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Call + Chat
                           Row(
                             children: [
                               if (order.customerPhone != null)
@@ -245,17 +278,19 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                                 const SizedBox(width: 10),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () => _openInMaps(
-                                    deliveryLatLng.latitude,
-                                    deliveryLatLng.longitude,
+                                  onPressed: () => showQuickMessageSheet(
+                                    context,
+                                    phone: order.customerPhone,
+                                    recipientLabel:
+                                        order.customerName ?? 'Customer',
                                   ),
-                                  icon: const Icon(Icons.map_rounded,
+                                  icon: const Icon(Icons.chat_bubble_outline_rounded,
                                       size: 18),
-                                  label: const Text('Navigate'),
+                                  label: const Text('Chat'),
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF3498DB),
+                                    foregroundColor: const Color(0xFF6C63FF),
                                     side: const BorderSide(
-                                      color: Color(0xFF3498DB),
+                                      color: Color(0xFF6C63FF),
                                     ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius:

@@ -19,6 +19,7 @@ class Env {
         // Replace with your LAN IP for physical-device testing.
         return 'http://192.168.1.100:5000/api/v1';
       case 'prod':
+        return 'http://187.127.171.117/api/v1';
       case 'dev':
       default:
         return 'http://187.127.171.117/api/v1';

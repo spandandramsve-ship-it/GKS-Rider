@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/history_item.dart';
+import '../../models/rider_summary.dart';
 import '../../services/dashboard_service.dart';
 import '../../core/api_client.dart';
 import '../../widgets/status_chip.dart';
@@ -18,7 +19,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final DashboardService _dashService = DashboardService();
   final ScrollController _scrollCtrl = ScrollController();
-  final _dateFormat = DateFormat('d MMM, h:mm a');
+  final _timeFormat = DateFormat('h:mm a');
   final _currencyFormat = NumberFormat.currency(
     locale: 'en_IN',
     symbol: '₹',
@@ -41,6 +42,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   int _selectedTab = 0;
   bool _showPayments = false;
   int _fetchToken = 0;
+
+  RiderSummary? _paymentsSummary;
+  bool _isLoadingSummary = false;
 
   @override
   void initState() {
@@ -110,6 +114,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _togglePayments() {
     setState(() => _showPayments = !_showPayments);
+    if (_showPayments && _paymentsSummary == null && !_isLoadingSummary) {
+      _fetchPaymentsSummary();
+    }
+  }
+
+  Future<void> _fetchPaymentsSummary() async {
+    setState(() => _isLoadingSummary = true);
+    try {
+      final summary = await _dashService.getSummary(period: 'all');
+      if (!mounted) return;
+      setState(() {
+        _paymentsSummary = summary;
+        _isLoadingSummary = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingSummary = false);
+    }
   }
 
   @override
@@ -180,20 +202,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
           if (!_showPayments) const SizedBox(height: 8),
 
-          // Payments header
+          // Payments summary cards
           if (_showPayments)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
                 children: [
-                  const Icon(Icons.payments_outlined,
-                      color: Color(0xFF6C63FF), size: 20),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Payment History',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Cash in hand',
+                      _paymentsSummary?.cashCollected,
+                      const Color(0xFFE67E22),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Online Payments',
+                      _paymentsSummary?.onlinePayments,
+                      const Color(0xFF3498DB),
                     ),
                   ),
                 ],
@@ -264,71 +291,112 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildOrderCard(HistoryItem item) {
+  Widget _buildSummaryCard(String label, double? value, Color color) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-        ),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              if (item.orderNumber != null)
-                Text(
-                  '#${item.orderNumber}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6C63FF),
-                  ),
-                ),
-              const Spacer(),
-              StatusChip(status: item.bucket),
-            ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.color
+                  ?.withValues(alpha: 0.7),
+            ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.store_rounded, size: 15, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  item.storeName ?? '—',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.person_outline, size: 15, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  item.customerName ?? '—',
+          _isLoadingSummary && value == null
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  _currencyFormat.format(value ?? 0),
                   style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.7),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: color,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
+        ],
+      ),
+    );
+  }
+
+  String _bucketLabel(String bucket) {
+    switch (bucket.toUpperCase()) {
+      case 'ONGOING':
+        return 'Ongoing';
+      case 'COMPLETED':
+        return 'Delivery Completed';
+      case 'FAILED':
+        return 'Delivery Failed';
+      default:
+        return bucket;
+    }
+  }
+
+  Widget _buildOrderCard(HistoryItem item) {
+    final color = StatusChip.bucketColor(item.bucket);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withValues(alpha: 0.4)),
+            ),
+            child: Icon(Icons.shopping_bag_outlined, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.orderNumber != null)
+                  Text(
+                    'Order #${item.orderNumber}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                const SizedBox(height: 6),
+                _buildLabeledLine('From', item.storeName ?? '—'),
+                const SizedBox(height: 2),
+                _buildLabeledLine(
+                  'Deliver to',
+                  item.customerName ?? '—',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
               Text(
                 _currencyFormat.format(item.amount),
                 style: const TextStyle(
@@ -336,59 +404,91 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                _bucketLabel(item.bucket),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              if (item.displayTime != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _timeFormat.format(item.displayTime!.toLocal()),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
             ],
           ),
-          if (item.displayTime != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              _dateFormat.format(item.displayTime!.toLocal()),
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withValues(alpha: 0.5),
-              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabeledLine(String label, String value) {
+    return RichText(
+      overflow: TextOverflow.ellipsis,
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$label ',
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.color
+                  ?.withValues(alpha: 0.6),
             ),
-          ],
+          ),
+          TextSpan(
+            text: value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPaymentCard(HistoryItem item) {
-    // Only show items with payment info.
+    const color = Color(0xFF27AE60);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: (item.paymentStatus?.toUpperCase() == 'PAID'
-                      ? const Color(0xFF27AE60)
-                      : const Color(0xFFE67E22))
-                  .withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Icon(
               item.collectionMethod?.toLowerCase() == 'cash'
                   ? Icons.money_rounded
-                  : Icons.account_balance_wallet_rounded,
-              color: item.paymentStatus?.toUpperCase() == 'PAID'
-                  ? const Color(0xFF27AE60)
-                  : const Color(0xFFE67E22),
-              size: 20,
+                  : Icons.qr_code_rounded,
+              color: color,
+              size: 22,
             ),
           ),
           const SizedBox(width: 12),
@@ -396,24 +496,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.storeName ?? 'Order',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                if (item.orderNumber != null)
+                  Text(
+                    'Order #${item.orderNumber}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 2),
+                const Text(
+                  'Order Completed',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
                 Text(
-                  '${item.collectionMethod ?? item.paymentMode ?? '—'}'
-                  '${item.collectedAt != null ? ' • ${_dateFormat.format(item.collectedAt!.toLocal())}' : ''}',
+                  item.collectionMethod ?? item.paymentMode ?? '—',
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context)
                         .textTheme
                         .bodySmall
                         ?.color
-                        ?.withValues(alpha: 0.5),
+                        ?.withValues(alpha: 0.6),
                   ),
                 ),
               ],
