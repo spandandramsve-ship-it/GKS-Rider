@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"import reportlab\")"
+      "Bash(python -c \"import reportlab\")",
+      "Bash(flutter analyze *)",
+      "Bash(flutter pub *)",
+      "Bash(git mv *)",
+      "Bash(rmdir lib/screens/home)",
+      "Bash(mkdir -p lib/features/order/data/models lib/features/order/presentation/bloc lib/features/order/presentation/screens)",
+      "Bash(mkdir -p lib/app)",
+      "Bash(rmdir lib/screens)",
+      "Bash(git rm *)",
+      "Bash(rmdir lib/state lib/services lib/models)",
+      "Bash(flutter test *)"
     ]
   }
 }
